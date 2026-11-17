@@ -1,0 +1,42 @@
+{
+  "common": {
+    "app_name": "SiteSwap",
+    "tagline": "rethinking surplus waste",
+    "pilot_live": "Pilot Live",
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "view": "View",
+    "back": "Back"
+  },
+  "nav": {
+    "browse": "Browse",
+    "sell": "Sell",
+    "reservations": "Reserved",
+    "impact": "Impact",
+    "profile": "Profile"
+  },
+  "home": {
+    "hero_badge": "Arbiter Hacks V1 • Rethinking Waste",
+    "hero_title_left": "Leftover construction material?",
+    "hero_title_accent": "Sell or save nearby.",
+    "hero_desc": "List leftover bricks, cement, steel, or sand in 2 minutes using AI. Or buy at 20–40% discount within 10 km.",
+    "find_btn": "Find Materials",
+    "post_btn": "+ Post Surplus",
+    "stat_diverted": "Waste Diverted",
+    "stat_co2": "CO₂ Avoided",
+    "stat_saved": "Money Saved",
+    "nearby_title": "Browse Surplus Near Salem",
+    "nearby_desc": "Bricks, cement, and M-Sand within 25 km"
+  },
+  "errors": {
+    "unauthenticated": "Please sign in to continue.",
+    "forbidden": "You do not have permission to perform this action.",
+    "validation": "Invalid input provided.",
+    "not_found": "The requested item was not found.",
+    "conflict": "This action conflicts with current state.",
+    "rate_limited": "Too many requests. Please wait a moment.",
+    "upstream": "Third-party service error. Please try again.",
+    "internal": "An unexpected error occurred."
+  }
+}
