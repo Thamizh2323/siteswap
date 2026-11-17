@@ -50,14 +50,14 @@ const serverEnvSchema = z
     if (isRuntimeProduction) {
       if (isPlaceholder(data.GEMINI_API_KEY)) {
         ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+          code: "custom",
           path: ["GEMINI_API_KEY"],
           message: "GEMINI_API_KEY cannot be a placeholder in production.",
         });
       }
       if (isPlaceholder(data.SUPABASE_SERVICE_ROLE_KEY)) {
         ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+          code: "custom",
           path: ["SUPABASE_SERVICE_ROLE_KEY"],
           message: "SUPABASE_SERVICE_ROLE_KEY cannot be a placeholder in production.",
         });
