@@ -6,8 +6,10 @@ export const metadata: Metadata = {
   title: "SiteSwap | P2P Construction Surplus Marketplace",
   description: "Rethink Waste: buy & sell surplus bricks, cement, steel, and M-Sand nearby at honest discounts.",
   manifest: "/manifest.json",
-  icons: {
-    icon: "/favicon.ico",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "SiteSwap",
   },
 };
 
@@ -26,10 +28,6 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="dark">
-      <head>
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-      </head>
       <body>
         <AppShell>{children}</AppShell>
       </body>
