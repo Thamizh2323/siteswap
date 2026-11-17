@@ -111,7 +111,7 @@ export function BottomNav() {
   return (
     <nav
       aria-label="Bottom Navigation"
-      className="fixed bottom-0 left-0 right-0 z-40 bg-[#0f131a]/95 backdrop-blur-lg border-t border-[#1f2633]"
+      className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#0f131a]/95 backdrop-blur-lg border-t border-[#1f2633]"
     >
       <div className="max-w-md mx-auto px-2 h-16 flex items-center justify-around">
         {navItems.map((item) => {
