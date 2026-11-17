@@ -7,6 +7,15 @@ interface DbErrorLike {
   hint?: string;
 }
 
+export function flattenZodError(error: { issues: readonly { path: readonly PropertyKey[]; message: string }[] }): Record<string, string> {
+  const fields: Record<string, string> = {};
+  for (const issue of error.issues) {
+    const key = issue.path.map(String).join(".");
+    if (key) fields[key] = issue.message;
+  }
+  return fields;
+}
+
 export function mapDbError(error: unknown): Result<never> {
   const err = error as DbErrorLike;
   const msg = err?.message || "Unknown database error";
