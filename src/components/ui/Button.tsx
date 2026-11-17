@@ -1,7 +1,7 @@
 import React from "react";
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "secondary" | "outline" | "ghost" | "danger";
+  variant?: "primary" | "secondary" | "outline" | "ghost" | "danger" | "emerald";
   size?: "sm" | "md" | "lg";
   isLoading?: boolean;
 }
@@ -16,20 +16,21 @@ export function Button({
   ...props
 }: ButtonProps) {
   const baseStyles =
-    "inline-flex items-center justify-center font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500/50 disabled:opacity-50 disabled:cursor-not-allowed select-none active:scale-[0.98]";
+    "inline-flex items-center justify-center font-semibold rounded-lg transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-amber-500/40 disabled:opacity-50 disabled:cursor-not-allowed select-none active:scale-[0.98] cursor-pointer";
 
   const sizes = {
     sm: "px-3 py-1.5 text-xs",
-    md: "px-4 py-2.5 text-sm",
-    lg: "px-5 py-3 text-base w-full",
+    md: "px-4 py-2 text-sm",
+    lg: "px-6 py-3 text-base w-full sm:w-auto",
   };
 
   const variants = {
-    primary: "bg-orange-500 text-white hover:bg-orange-600 shadow-sm shadow-orange-950",
-    secondary: "bg-[#1a202c] text-slate-100 hover:bg-[#232c3d] border border-[#232c3d]",
-    outline: "bg-transparent text-slate-200 border border-[#232c3d] hover:bg-[#12161f]",
-    ghost: "bg-transparent text-slate-400 hover:text-slate-100 hover:bg-[#12161f]",
+    primary: "bg-[#F59E0B] text-[#09090B] hover:bg-[#D97706] font-bold shadow-sm shadow-amber-950/30",
+    secondary: "bg-[#141417] text-[#FAFAFA] hover:bg-[#1C1C21] border border-[#27272A]",
+    outline: "bg-transparent text-[#FAFAFA] border border-[#27272A] hover:bg-[#141417] hover:border-[#3F3F46]",
+    ghost: "bg-transparent text-[#A1A1AA] hover:text-[#FAFAFA] hover:bg-[#141417]",
     danger: "bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20",
+    emerald: "bg-[#10B981] text-white hover:bg-[#059669] font-bold shadow-sm shadow-emerald-950/30",
   };
 
   return (

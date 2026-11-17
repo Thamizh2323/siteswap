@@ -17,10 +17,10 @@ const navItems: NavItem[] = [
     href: "/browse",
     icon: (active) => (
       <svg
-        className={`w-5 h-5 ${active ? "text-orange-500" : "text-slate-400"}`}
+        className={`w-5 h-5 transition-colors ${active ? "text-[#F59E0B]" : "text-[#A1A1AA]"}`}
         fill="none"
         stroke="currentColor"
-        strokeWidth="2"
+        strokeWidth="1.8"
         viewBox="0 0 24 24"
       >
         <path
@@ -35,15 +35,15 @@ const navItems: NavItem[] = [
     key: "nav.sell",
     href: "/sell/new",
     icon: (active) => (
-      <div
-        className={`w-7 h-7 rounded-full flex items-center justify-center transition-transform ${
-          active ? "bg-orange-500 text-white scale-110 shadow-lg shadow-orange-500/30" : "bg-orange-500/20 text-orange-400"
-        }`}
+      <svg
+        className={`w-5 h-5 transition-colors ${active ? "text-[#F59E0B]" : "text-[#A1A1AA]"}`}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        viewBox="0 0 24 24"
       >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-        </svg>
-      </div>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+      </svg>
     ),
   },
   {
@@ -51,10 +51,10 @@ const navItems: NavItem[] = [
     href: "/my/reservations",
     icon: (active) => (
       <svg
-        className={`w-5 h-5 ${active ? "text-orange-500" : "text-slate-400"}`}
+        className={`w-5 h-5 transition-colors ${active ? "text-[#F59E0B]" : "text-[#A1A1AA]"}`}
         fill="none"
         stroke="currentColor"
-        strokeWidth="2"
+        strokeWidth="1.8"
         viewBox="0 0 24 24"
       >
         <path
@@ -70,10 +70,10 @@ const navItems: NavItem[] = [
     href: "/impact",
     icon: (active) => (
       <svg
-        className={`w-5 h-5 ${active ? "text-orange-500" : "text-slate-400"}`}
+        className={`w-5 h-5 transition-colors ${active ? "text-[#F59E0B]" : "text-[#A1A1AA]"}`}
         fill="none"
         stroke="currentColor"
-        strokeWidth="2"
+        strokeWidth="1.8"
         viewBox="0 0 24 24"
       >
         <path
@@ -89,10 +89,10 @@ const navItems: NavItem[] = [
     href: "/profile",
     icon: (active) => (
       <svg
-        className={`w-5 h-5 ${active ? "text-orange-500" : "text-slate-400"}`}
+        className={`w-5 h-5 transition-colors ${active ? "text-[#F59E0B]" : "text-[#A1A1AA]"}`}
         fill="none"
         stroke="currentColor"
-        strokeWidth="2"
+        strokeWidth="1.8"
         viewBox="0 0 24 24"
       >
         <path
@@ -110,8 +110,8 @@ export function BottomNav() {
 
   return (
     <nav
-      aria-label="Bottom Navigation"
-      className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#0f131a]/95 backdrop-blur-lg border-t border-[#1f2633]"
+      aria-label="Mobile Bottom Navigation"
+      className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#09090B]/95 backdrop-blur-lg border-t border-[#27272A]"
     >
       <div className="max-w-md mx-auto px-2 h-16 flex items-center justify-around">
         {navItems.map((item) => {
@@ -124,12 +124,16 @@ export function BottomNav() {
             <Link
               key={item.href}
               href={item.href}
-              className="flex-1 flex flex-col items-center justify-center py-1 min-h-[48px] touch-manipulation group"
+              className="relative flex-1 flex flex-col items-center justify-center py-1 min-h-[48px] touch-manipulation group"
             >
-              <div className="transition-transform group-active:scale-90">{item.icon(isActive)}</div>
+              {/* Amber Active Indicator Bar */}
+              {isActive && (
+                <span className="absolute top-0 left-4 right-4 h-0.5 bg-[#F59E0B] rounded-full" />
+              )}
+              <div className="transition-transform group-active:scale-95">{item.icon(isActive)}</div>
               <span
-                className={`text-[10px] mt-1 font-medium transition-colors ${
-                  isActive ? "text-orange-500" : "text-slate-400 group-hover:text-slate-200"
+                className={`text-[10px] mt-1 font-semibold transition-colors ${
+                  isActive ? "text-[#F59E0B]" : "text-[#A1A1AA] group-hover:text-[#FAFAFA]"
                 }`}
               >
                 {t(item.key)}

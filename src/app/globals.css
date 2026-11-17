@@ -1,17 +1,19 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0a0c10;
-  --surface: #12161f;
-  --surface-raised: #1a202c;
-  --border: #232c3d;
-  --border-subtle: #19202c;
-  --text: #f1f5f9;
-  --text-muted: #8b9bb4;
-  --accent: #f97316; /* construction amber / orange */
-  --accent-hover: #ea580c;
-  --accent-subtle: rgba(249, 115, 22, 0.12);
-  --success: #10b981;
+  --background: #09090b;
+  --surface: #141417;
+  --surface-raised: #1c1c21;
+  --border: #27272a;
+  --border-subtle: #1f1f23;
+  --text: #fafafa;
+  --text-muted: #a1a1aa;
+  --accent: #f59e0b; /* Construction Amber */
+  --accent-hover: #d97706;
+  --accent-text: #09090b;
+  --accent-subtle: rgba(245, 158, 11, 0.12);
+  --success: #10b981; /* Emerald */
+  --success-hover: #059669;
   --danger: #ef4444;
   --warning: #f59e0b;
 }
@@ -25,7 +27,11 @@
   --color-text-muted: var(--text-muted);
   --color-accent: var(--accent);
   --color-accent-hover: var(--accent-hover);
+  --color-accent-text: var(--accent-text);
   --color-accent-subtle: var(--accent-subtle);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-warning: var(--warning);
 }
 
 * {
@@ -42,7 +48,11 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Scrollbar styling */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Custom sleek scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -53,4 +63,7 @@ body {
 ::-webkit-scrollbar-thumb {
   background: var(--border);
   border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3f3f46;
 }
