@@ -8,7 +8,7 @@ Tags: **[C]** use Claude, **[N]** NIM/Gemini fine, **[YOU]** manual step
 ## Phase A: Foundation
 - [x] S0 [YOU] Accounts, keys, `.env.local`, GEMINI.md, schema.sql in repo
 - [x] S1 [N] Scaffold Next.js + Tailwind + folders + PWA manifest
-- [ ] S2 [N] Design system + layout + bottom nav (dark theme)
+- [x] S2 [N] Design system + layout + bottom nav (dark theme)
 - [ ] S3 [C] Supabase clients (`@supabase/ssr`), env validation, auth middleware
 - [ ] S4 [YOU] Run schema.sql in Supabase, generate types
 - [ ] S5 [C] Auth (email+password, Google optional) + profile page + protected routes
