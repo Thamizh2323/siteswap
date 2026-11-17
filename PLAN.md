@@ -11,7 +11,7 @@ Tags: **[C]** use Claude, **[N]** NIM/Gemini fine, **[YOU]** manual step
 - [x] S2 [N] Design system + layout + bottom nav (dark theme)
 - [x] S2.5 [C] Architecture hardening (docs/ARCHITECTURE.md alignment, layers, ESLint boundaries, vitest)
 - [x] S3 [C] Supabase clients (`@supabase/ssr`), env validation, auth middleware
-- [ ] S4 [YOU] Run schema.sql in Supabase, generate types
+- [x] S4 [YOU] Run schema.sql in Supabase, generate types
 - [ ] S5 [C] Auth (email+password, Google optional) + profile page + protected routes
 
 ## Phase B: Core Product (Must)
