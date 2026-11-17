@@ -455,9 +455,23 @@ export interface Database {
       };
       get_contact: {
         Args: {
-          res_id: string;
+          p_res: string;
         };
-        Returns: string;
+        Returns: {
+          name: string;
+          phone: string;
+        }[];
+      };
+      impact_totals: {
+        Args: {
+          p_include_demo?: boolean;
+        };
+        Returns: {
+          tonnes: number;
+          co2_kg: number;
+          rupees: number;
+          deals: number;
+        }[];
       };
       impact_summary: {
         Args: {
