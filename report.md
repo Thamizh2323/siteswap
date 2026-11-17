@@ -164,16 +164,19 @@ src/
 
 ---
 
-## 7. Concrete Hardening Recommendations Before Phase B
+## 7. Hardening Recommendations Implemented & Verified
 
-Before proceeding to **Phase B: Core Product** (`S6` Image upload, `S7` Gemini AI vision, `S8` Post surplus), the following minor enhancements are recommended:
+All 3 hardening recommendations were implemented, tested, and verified before proceeding to Phase B:
 
-1. **Migration 0004 (Column-Level RLS Privacy on Profiles)**:
-   Update the SELECT policy on `profiles` to restrict direct table reads to `auth.uid() = id`, ensuring that public reads must query `public_profiles` (which omits phone numbers).
-2. **Content-Security-Policy (CSP) in `next.config.ts`**:
-   Add a standard CSP header allowing scripts and styles from `'self'` and OpenStreetMap tile origins.
-3. **Strict Production Environment Check**:
-   In `src/server/env.ts`, enforce that `SUPABASE_SERVICE_ROLE_KEY` and `GEMINI_API_KEY` cannot fall back to placeholder values when `process.env.NODE_ENV === "production"`.
+1. **Migration 0004 Implemented ([supabase/migrations/0004_profiles_privacy.sql](file:///c:/Users/tamil/Documents/swapsite/supabase/migrations/0004_profiles_privacy.sql))**:
+   - Dropped the broad `Profiles: public read` policy.
+   - Enforced `Profiles: own read` (`auth.uid() = id`), preventing unauthenticated or third-party column scraping of phone numbers.
+   - Created sanitized `public_profiles` view (`id, name, role, lang, area_text, created_at`) without phone numbers.
+   - Phone numbers remain exclusively accessible via `get_contact(p_res)` RPC upon accepted hold.
+2. **Content-Security-Policy (CSP) Active ([next.config.ts](file:///c:/Users/tamil/Documents/swapsite/next.config.ts))**:
+   - Added comprehensive CSP header restricting script execution, frame ancestors (`'none'`), and allowing OpenStreetMap map tiles, Google Generative AI APIs, and Supabase storage/realtime connections. Verified live via HTTP response headers.
+3. **Strict Production Environment Guard ([src/server/env.ts](file:///c:/Users/tamil/Documents/swapsite/src/server/env.ts))**:
+   - Configured `assertProductionSecrets()` and `superRefine()` checks throwing fatal errors if placeholder keys are used in production runtime, while allowing development and CI builds to compile cleanly. Verified by 2 dedicated unit tests in [src/server/__tests__/env.test.ts](file:///c:/Users/tamil/Documents/swapsite/src/server/__tests__/env.test.ts).
 
 ---
 
