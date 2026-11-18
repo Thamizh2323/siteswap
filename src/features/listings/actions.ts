@@ -6,6 +6,8 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { toPointWKT } from "@/lib/geo";
 import { ok, fail, type Result } from "@/lib/result";
 import { createListingSchema } from "./schemas";
+import { getNearbyListings } from "./queries";
+import type { BrowseFilters, NearbyListing } from "./types";
 
 export async function createListingAction(
   input: unknown
@@ -79,4 +81,10 @@ export async function createListingAction(
   revalidatePath("/");
 
   return ok({ id: listing.id });
+}
+
+export async function fetchNearbyListingsAction(
+  filters: BrowseFilters
+): Promise<Result<NearbyListing[]>> {
+  return getNearbyListings(filters);
 }
