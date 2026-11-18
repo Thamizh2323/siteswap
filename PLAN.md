@@ -24,9 +24,9 @@ Tags: **[C]** use Claude, **[N]** NIM/Gemini fine, **[YOU]** manual step
 - [x] S12 [C] Reserve flow + seller/buyer inbox (RPCs)
 - [x] S13 [C] Complete + impact log + contact reveal
 - [x] S14 [N] Impact dashboard + methodology page
-- [ ] S15 [N] Landing page with live counters
+- [x] S15 [N] Landing page with live counters
 
-**🏁 MILESTONE Nov 28: end-to-end demo works (post → browse → reserve → accept → complete)**
+**🏁 MILESTONE COMPLETED: end-to-end demo works (post → browse → reserve → accept → complete)**
 
 ## Phase C: Differentiators (Should — build if time allows)
 - [ ] S16 [N] Wanted requests + matching
