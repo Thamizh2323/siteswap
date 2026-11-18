@@ -4,7 +4,11 @@ import { revalidatePath } from "next/cache";
 import { requireUser } from "@/server/auth";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { ok, fail, type Result } from "@/lib/result";
-import { reserveListingSchema, respondReservationSchema } from "./schemas";
+import {
+  reserveListingSchema,
+  respondReservationSchema,
+  completeReservationSchema,
+} from "./schemas";
 
 export async function reserveListingAction(
   input: unknown
@@ -81,6 +85,59 @@ export async function respondReservationAction(
 
   revalidatePath("/my/reservations");
   return ok(true);
+}
+
+export async function completeReservationAction(
+  input: unknown
+): Promise<Result<{ kgDiverted: number; co2SavedKg: number; moneySaved: number }>> {
+  const parsed = completeReservationSchema.safeParse(input);
+  if (!parsed.success) {
+    return fail("VALIDATION", "Invalid reservation inputs");
+  }
+
+  await requireUser();
+  const { reservationId } = parsed.data;
+
+  // Handle demo reservations
+  if (reservationId.startsWith("demo-") || reservationId.startsWith("res-")) {
+    revalidatePath("/my/reservations");
+    revalidatePath("/impact");
+    return ok({
+      kgDiverted: 500,
+      co2SavedKg: 410,
+      moneySaved: 1300,
+    });
+  }
+
+  const supabase = await createServerSupabaseClient();
+  const { error } = await supabase.rpc("complete_reservation", {
+    p_res: reservationId,
+  });
+
+  if (error) {
+    const msg = error.message.toLowerCase();
+    if (msg.includes("invalid")) {
+      return fail("FORBIDDEN", "Only accepted reservations can be confirmed as completed by the buyer");
+    }
+    return fail("INTERNAL", error.message);
+  }
+
+  // Fetch logged impact metrics
+  const { data: impact } = await supabase
+    .from("impact_log")
+    .select("kg_diverted, co2_avoided_kg, money_saved")
+    .eq("reservation_id", reservationId)
+    .single();
+
+  revalidatePath("/my/reservations");
+  revalidatePath("/impact");
+  revalidatePath("/browse");
+
+  return ok({
+    kgDiverted: Number(impact?.kg_diverted || 0),
+    co2SavedKg: Number(impact?.co2_avoided_kg || 0),
+    moneySaved: Number(impact?.money_saved || 0),
+  });
 }
 
 export async function getContactAction(

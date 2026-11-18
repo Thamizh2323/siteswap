@@ -2,10 +2,12 @@ import { describe, it, expect, vi } from "vitest";
 import {
   reserveListingSchema,
   respondReservationSchema,
+  completeReservationSchema,
 } from "../schemas";
 import {
   reserveListingAction,
   respondReservationAction,
+  completeReservationAction,
   getContactAction,
 } from "../actions";
 
@@ -67,6 +69,20 @@ describe("Reservation Schemas", () => {
     });
     expect(missing.success).toBe(false);
   });
+
+  it("validates completeReservationSchema with valid reservationId", () => {
+    const valid = completeReservationSchema.safeParse({
+      reservationId: "res-xyz-789",
+    });
+    expect(valid.success).toBe(true);
+  });
+
+  it("rejects empty reservationId in completeReservationSchema", () => {
+    const empty = completeReservationSchema.safeParse({
+      reservationId: "",
+    });
+    expect(empty.success).toBe(false);
+  });
 });
 
 describe("Reservation Server Actions", () => {
@@ -103,6 +119,30 @@ describe("Reservation Server Actions", () => {
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.data).toBe(true);
+    }
+  });
+
+  it("processes demo completion and calculates impact metrics via completeReservationAction", async () => {
+    const result = await completeReservationAction({
+      reservationId: "demo-res-1",
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.kgDiverted).toBeGreaterThan(0);
+      expect(result.data.co2SavedKg).toBeGreaterThan(0);
+      expect(result.data.moneySaved).toBeGreaterThan(0);
+    }
+  });
+
+  it("returns validation error on malformed completeReservationAction input", async () => {
+    const result = await completeReservationAction({
+      reservationId: "",
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.code).toBe("VALIDATION");
     }
   });
 

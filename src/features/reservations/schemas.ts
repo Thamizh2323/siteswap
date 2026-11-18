@@ -13,3 +13,9 @@ export const respondReservationSchema = z.object({
 });
 
 export type RespondReservationInput = z.infer<typeof respondReservationSchema>;
+
+export const completeReservationSchema = z.object({
+  reservationId: z.string().min(1, "Reservation ID is required"),
+});
+
+export type CompleteReservationInput = z.infer<typeof completeReservationSchema>;

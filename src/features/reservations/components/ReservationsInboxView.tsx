@@ -1,11 +1,13 @@
 "use client";
 
 import React, { useState } from "react";
-import { Card } from "@/components/ui/Card";
-import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
 import type { ReservationItem } from "../constants";
-import { respondReservationAction, getContactAction } from "../actions";
+import {
+  respondReservationAction,
+  completeReservationAction,
+  getContactAction,
+} from "../actions";
+import { ReservationCard } from "./ReservationCard";
 
 interface Props {
   initialPurchases: ReservationItem[];
@@ -18,6 +20,9 @@ export function ReservationsInboxView({ initialPurchases, initialRequests }: Pro
   const [requests, setRequests] = useState<ReservationItem[]>(initialRequests);
   const [loadingIds, setLoadingIds] = useState<Record<string, boolean>>({});
   const [completedIds, setCompletedIds] = useState<string[]>([]);
+  const [impactMap, setImpactMap] = useState<
+    Record<string, { kgDiverted: number; co2SavedKg: number; moneySaved: number }>
+  >({});
   const [actionError, setActionError] = useState<string | null>(null);
 
   const handleSellerResponse = async (id: string, accept: boolean) => {
@@ -51,8 +56,21 @@ export function ReservationsInboxView({ initialPurchases, initialRequests }: Pro
     }
   };
 
-  const handleConfirmReceived = (id: string) => {
-    setCompletedIds((prev) => [...prev, id]);
+  const handleConfirmReceived = async (id: string) => {
+    setActionError(null);
+    setLoadingIds((prev) => ({ ...prev, [id]: true }));
+
+    try {
+      const res = await completeReservationAction({ reservationId: id });
+      if (!res.ok) {
+        setActionError(res.error.message);
+        return;
+      }
+      setCompletedIds((prev) => [...prev, id]);
+      setImpactMap((prev) => ({ ...prev, [id]: res.data }));
+    } finally {
+      setLoadingIds((prev) => ({ ...prev, [id]: false }));
+    }
   };
 
   const listItems = activeTab === "purchases" ? purchases : requests;
@@ -117,112 +135,18 @@ export function ReservationsInboxView({ initialPurchases, initialRequests }: Pro
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {listItems.map((item) => {
-            const isCompleted = item.status === "completed" || completedIds.includes(item.id);
-            const isAccepted = item.status === "accepted";
-            const isLoading = Boolean(loadingIds[item.id]);
-            const phone = item.counterpartyPhone || "+919876543210";
-            const cleanPhone = phone.replace(/[^0-9]/g, "");
-
-            return (
-              <Card
-                key={item.id}
-                className="p-5 bg-[#141417] border-[#27272A] flex flex-col justify-between space-y-4"
-              >
-                <div className="space-y-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <h3 className="text-base font-bold text-[#FAFAFA] line-clamp-1">
-                        {item.listingTitle}
-                      </h3>
-                      <p className="text-xs text-[#A1A1AA] mt-0.5">
-                        {item.counterpartyName} • {item.counterpartyRole}
-                      </p>
-                    </div>
-
-                    {isCompleted ? (
-                      <Badge variant="success">Completed</Badge>
-                    ) : isAccepted ? (
-                      <Badge variant="success">Accepted</Badge>
-                    ) : (
-                      <Badge variant="warning">Pending</Badge>
-                    )}
-                  </div>
-
-                  <div className="p-3 rounded-lg bg-[#09090B] border border-[#27272A] flex items-center justify-between text-xs">
-                    <div>
-                      <span className="text-[#A1A1AA]">Quantity Held: </span>
-                      <strong className="text-[#FAFAFA] tabular-nums">
-                        {item.qty} {item.unit}
-                      </strong>
-                    </div>
-                    <div>
-                      <span className="text-[#A1A1AA]">Total: </span>
-                      <strong className="text-[#F59E0B] text-sm tabular-nums">
-                        ₹{item.totalPrice.toLocaleString("en-IN")}
-                      </strong>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t border-[#27272A] space-y-3">
-                  {isAccepted && !isCompleted && (
-                    <div className="space-y-2.5">
-                      <div className="grid grid-cols-2 gap-2">
-                        <a
-                          href={`tel:${phone}`}
-                          className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-lg bg-[#1C1C21] hover:bg-[#27272A] text-xs font-bold text-[#FAFAFA] border border-[#27272A] transition-colors"
-                        >
-                          <span>📞</span> Call
-                        </a>
-                        <a
-                          href={`https://wa.me/${cleanPhone}?text=${encodeURIComponent(`Hi, regarding SiteSwap reservation for ${item.listingTitle}`)}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-lg bg-[#10B981] hover:bg-[#059669] text-xs font-bold text-white transition-colors"
-                        >
-                          <span>💬</span> WhatsApp
-                        </a>
-                      </div>
-
-                      {activeTab === "purchases" && (
-                        <Button size="md" className="w-full text-xs font-bold" onClick={() => handleConfirmReceived(item.id)}>
-                          Confirm Received (Log Impact)
-                        </Button>
-                      )}
-                    </div>
-                  )}
-
-                  {!isAccepted && !isCompleted && activeTab === "purchases" && (
-                    <div className="p-3 rounded-lg bg-[#09090B] border border-[#27272A] text-center text-xs text-[#A1A1AA]">
-                      <span className="text-[#F59E0B] font-semibold">{item.expiresInText || "Expires in 24h"}</span>
-                      {" • "}Phone reveals once seller accepts
-                    </div>
-                  )}
-
-                  {!isAccepted && !isCompleted && activeTab === "requests" && (
-                    <div className="space-y-2">
-                      <p className="text-[11px] text-[#A1A1AA] text-center">{item.expiresInText || "Expires in 24h"}</p>
-                      <div className="grid grid-cols-2 gap-2">
-                        <Button variant="primary" size="sm" disabled={isLoading} onClick={() => handleSellerResponse(item.id, true)}>
-                          {isLoading ? "Updating..." : "Accept Hold"}
-                        </Button>
-                        <Button variant="secondary" size="sm" disabled={isLoading} onClick={() => handleSellerResponse(item.id, false)}>
-                          Decline
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-
-                  {isCompleted && (
-                    <div className="p-3 rounded-lg bg-[#10B981]/10 text-center text-xs font-bold text-[#10B981]">
-                      ✓ Handover Confirmed & Tonnes Diverted Logged
-                    </div>
-                  )}
-                </div>
-              </Card>
-            );
-          })}
+          {listItems.map((item) => (
+            <ReservationCard
+              key={item.id}
+              item={item}
+              activeTab={activeTab}
+              isCompleted={item.status === "completed" || completedIds.includes(item.id)}
+              isLoading={Boolean(loadingIds[item.id])}
+              impact={impactMap[item.id]}
+              onSellerResponse={handleSellerResponse}
+              onConfirmReceived={handleConfirmReceived}
+            />
+          ))}
         </div>
       )}
     </div>
