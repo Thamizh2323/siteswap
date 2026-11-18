@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { MATERIAL_FILTERS } from "@/features/listings/constants";
 import { ListingCard } from "@/features/listings/components/ListingCard";
+import { BrowseMapView } from "@/features/listings/components/BrowseMapView";
 import { fetchNearbyListingsAction } from "@/features/listings/actions";
 import type { NearbyListing } from "@/features/listings/types";
 
@@ -176,69 +176,13 @@ export default function BrowsePage() {
 
       {/* VIEW: MAP MODE */}
       {viewMode === "map" && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          <div className="hidden lg:block lg:col-span-5 space-y-3 max-h-[600px] overflow-y-auto pr-2">
-            {listings.map((item) => (
-              <div
-                key={item.id}
-                onClick={() => setActiveMarker(item)}
-                className={`p-3.5 rounded-xl border transition-all cursor-pointer ${
-                  activeMarker?.id === item.id ? "bg-[#1C1C21] border-[#F59E0B]" : "bg-[#141417] border-[#27272A]"
-                }`}
-              >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h4 className="text-sm font-bold text-[#FAFAFA]">{item.materialNameEn}</h4>
-                    <span className="text-xs text-[#A1A1AA]">{item.qtyAvailable} {item.unit} • {item.distanceKm} km away</span>
-                  </div>
-                  <span className="text-sm font-extrabold text-[#F59E0B]">₹{item.askPrice}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="lg:col-span-7 relative h-[460px] lg:h-[600px] rounded-2xl bg-[#09090B] border border-[#27272A] overflow-hidden flex flex-col justify-between p-4">
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 rounded-full border border-[#F59E0B]/30 bg-[#F59E0B]/5 pointer-events-none" />
-            <div className="relative z-10 flex items-center justify-between">
-              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-[#141417]/90 border border-[#27272A] text-[#FAFAFA]">
-                Salem Center • {radius} km circle
-              </span>
-              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-[#10B981]/20 text-[#10B981]">
-                {listings.length} listings nearby
-              </span>
-            </div>
-
-            <div className="relative z-10 my-auto flex flex-wrap items-center justify-around gap-4 py-8">
-              {listings.slice(0, 6).map((m) => (
-                <button
-                  key={m.id}
-                  onClick={() => setActiveMarker(m)}
-                  className={`px-3 py-1 rounded-full text-xs font-bold transition-transform shadow-lg ${
-                    activeMarker?.id === m.id
-                      ? "bg-[#F59E0B] text-[#09090B] scale-110"
-                      : "bg-[#141417] text-[#F59E0B] border border-[#F59E0B]/50"
-                  }`}
-                >
-                  ₹{m.askPrice}/{m.unit}
-                </button>
-              ))}
-            </div>
-
-            {activeMarker && (
-              <div className="relative z-10 p-3.5 rounded-xl bg-[#141417]/95 border border-[#F59E0B]/50 flex items-center justify-between gap-3">
-                <div>
-                  <h4 className="text-xs sm:text-sm font-bold text-[#FAFAFA]">{activeMarker.materialNameEn}</h4>
-                  <p className="text-[11px] text-[#A1A1AA]">
-                    {activeMarker.qtyAvailable} {activeMarker.unit} • <span className="text-[#10B981] font-semibold">{activeMarker.savingsPercent}% OFF</span> • {activeMarker.distanceKm} km away
-                  </p>
-                </div>
-                <Link href={`/listing/${activeMarker.id}`}>
-                  <Button size="sm">View</Button>
-                </Link>
-              </div>
-            )}
-          </div>
-        </div>
+        <BrowseMapView
+          center={coords}
+          radiusKm={radius}
+          listings={listings}
+          selectedListing={activeMarker}
+          onSelectListing={setActiveMarker}
+        />
       )}
     </div>
   );

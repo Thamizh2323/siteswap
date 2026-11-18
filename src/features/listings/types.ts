@@ -13,6 +13,8 @@ export interface NearbyListing {
   savingsPercent: number;
   distanceKm: number;
   distanceM: number;
+  lat?: number;
+  lng?: number;
   areaText: string;
   photos: string[];
   negotiable: boolean;

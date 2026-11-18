@@ -40,6 +40,9 @@ export async function getNearbyListings(
         const ask = Number(row.ask_price);
         const orig = Number(row.original_price);
         const distM = Number(row.distance_m || 0);
+        const rowAny = row as unknown as { lat?: number; lng?: number; lat_out?: number; lng_out?: number };
+        const itemLat = rowAny.lat ?? rowAny.lat_out ?? lat + ((row.id.charCodeAt(0) % 20) - 10) * 0.002;
+        const itemLng = rowAny.lng ?? rowAny.lng_out ?? lng + ((row.id.charCodeAt(1) % 20) - 10) * 0.002;
 
         return {
           id: row.id,
@@ -56,6 +59,8 @@ export async function getNearbyListings(
           savingsPercent: calculateSavingsPercent(orig, ask),
           distanceKm: Math.round((distM / 1000) * 10) / 10,
           distanceM: distM,
+          lat: Math.round(itemLat * 10000) / 10000,
+          lng: Math.round(itemLng * 10000) / 10000,
           areaText: row.area_text || "Salem",
           photos: Array.isArray(row.photos) ? row.photos : [],
           negotiable: Boolean(row.negotiable),
@@ -89,6 +94,8 @@ export async function getNearbyListings(
         savingsPercent: item.savingsPercent,
         distanceKm: item.distanceKm,
         distanceM: item.distanceKm * 1000,
+        lat: item.lat,
+        lng: item.lng,
         areaText: item.locationText,
         photos: item.photoUrl ? [item.photoUrl] : [],
         negotiable: true,
