@@ -23,7 +23,7 @@ Tags: **[C]** use Claude, **[N]** NIM/Gemini fine, **[YOU]** manual step
 - [x] S11 [N] Listing detail page
 - [x] S12 [C] Reserve flow + seller/buyer inbox (RPCs)
 - [x] S13 [C] Complete + impact log + contact reveal
-- [ ] S14 [N] Impact dashboard + methodology page
+- [x] S14 [N] Impact dashboard + methodology page
 - [ ] S15 [N] Landing page with live counters
 
 **🏁 MILESTONE Nov 28: end-to-end demo works (post → browse → reserve → accept → complete)**
