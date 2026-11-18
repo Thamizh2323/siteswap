@@ -20,7 +20,7 @@ Tags: **[C]** use Claude, **[N]** NIM/Gemini fine, **[YOU]** manual step
 - [x] S8 [N] Post Surplus page (form, price suggestion, location pin)
 - [x] S9 [N] Browse list + filters + pagination
 - [x] S10 [N] Map view + radius search (nearby_listings RPC)
-- [ ] S11 [N] Listing detail page
+- [x] S11 [N] Listing detail page
 - [ ] S12 [C] Reserve flow + seller/buyer inbox (RPCs)
 - [ ] S13 [C] Complete + impact log + contact reveal
 - [ ] S14 [N] Impact dashboard + methodology page

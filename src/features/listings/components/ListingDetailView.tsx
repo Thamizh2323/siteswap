@@ -2,229 +2,237 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import type { ListingDetail } from "../types";
 
-interface ListingProps {
-  id: string;
-  title: string;
-  unit: string;
-  qtyAvailable: number;
-  askPrice: number;
-  originalPrice: number;
-  savingsPercent: number;
-  condition: string;
-  pickupType: string;
-  distanceKm: number;
-  areaText: string;
-  sellerName: string;
-  sellerRole: string;
-  sellerArea: string;
-  photosCount: number;
-}
-
-export function ListingDetailView({ listing }: { listing: ListingProps }) {
-  const [reserveQty, setReserveQty] = useState<number>(10);
+export function ListingDetailView({ listing }: { listing: ListingDetail }) {
+  const [reserveQty, setReserveQty] = useState<number>(
+    Math.min(10, listing.qtyAvailable)
+  );
   const [activePhotoIdx, setActivePhotoIdx] = useState<number>(0);
-  const [reservedSuccess, setReservedSuccess] = useState<boolean>(false);
+  const [reservedNotice, setReservedNotice] = useState<boolean>(false);
 
   const totalCost = reserveQty * listing.askPrice;
+  const photos = listing.photos.length > 0 ? listing.photos : ["🧱"];
+  const currentPhoto = photos[activePhotoIdx] ?? photos[0] ?? "🧱";
+  const isImageSrc = currentPhoto.startsWith("http") || currentPhoto.startsWith("/");
+
+  const conditionVariant =
+    listing.condition === "damaged"
+      ? "danger"
+      : listing.condition === "fair"
+      ? "warning"
+      : "success";
+
+  const handleStep = (delta: number) => {
+    setReserveQty((prev) => Math.max(1, Math.min(listing.qtyAvailable, prev + delta)));
+  };
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
-      {/* Top Breadcrumb & Back */}
+      {/* Top Breadcrumb */}
       <div className="flex items-center gap-2 text-xs text-[#A1A1AA]">
-        <Link href="/browse" className="hover:text-[#FAFAFA] flex items-center gap-1">
+        <Link href="/browse" className="hover:text-[#FAFAFA] flex items-center gap-1 transition-colors">
           &larr; Back to Listings
         </Link>
         <span>/</span>
-        <span className="text-[#FAFAFA] truncate">{listing.title}</span>
+        <span className="text-[#FAFAFA] truncate font-medium">{listing.title}</span>
       </div>
 
-      {/* Main Grid: Left 7 cols (Gallery + Specs + Safety), Right 5 cols (Sticky Reserve Card) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left Column (7 cols) */}
+        {/* Left Column (7 cols): Gallery + Specs + Safety */}
         <div className="lg:col-span-7 space-y-6">
-          {/* Photo Gallery Viewer */}
+          {/* Gallery Container */}
           <div className="relative h-72 sm:h-96 rounded-2xl bg-[#141417] border border-[#27272A] overflow-hidden flex items-center justify-center">
-            <span className="text-6xl">📦</span>
+            {isImageSrc ? (
+              <Image
+                src={currentPhoto}
+                alt={listing.title}
+                fill
+                className="object-cover"
+                sizes="(max-width: 1024px) 100vw, 60vw"
+                priority
+              />
+            ) : (
+              <span className="text-6xl select-none">{currentPhoto}</span>
+            )}
 
-            {/* Photo Counter Pill */}
-            <div className="absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-bold bg-[#09090B]/80 backdrop-blur-md text-[#FAFAFA] border border-[#27272A]">
-              {activePhotoIdx + 1} / {listing.photosCount}
+            {/* Counter pill */}
+            <div className="absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-bold bg-[#09090B]/80 backdrop-blur-md text-[#FAFAFA] border border-[#27272A] z-10">
+              {activePhotoIdx + 1} / {photos.length}
             </div>
 
-            {/* Gallery Thumbnail Selector */}
-            <div className="absolute bottom-4 left-4 flex gap-2">
-              {[0, 1, 2].map((idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setActivePhotoIdx(idx)}
-                  className={`w-10 h-10 rounded-lg bg-[#09090B] border flex items-center justify-center text-xs transition-all ${
-                    activePhotoIdx === idx
-                      ? "border-[#F59E0B] ring-1 ring-amber-400"
-                      : "border-[#27272A] opacity-70 hover:opacity-100"
-                  }`}
-                >
-                  📦
-                </button>
-              ))}
-            </div>
+            {/* Thumbnails */}
+            {photos.length > 1 && (
+              <div className="absolute bottom-4 left-4 flex gap-2 z-10">
+                {photos.map((p, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setActivePhotoIdx(idx)}
+                    className={`w-11 h-11 rounded-lg bg-[#09090B] border overflow-hidden relative transition-all ${
+                      activePhotoIdx === idx
+                        ? "border-[#F59E0B] ring-2 ring-[#F59E0B]/50"
+                        : "border-[#27272A] opacity-70 hover:opacity-100"
+                    }`}
+                  >
+                    {p.startsWith("http") ? (
+                      <Image src={p} alt="thumb" fill className="object-cover" />
+                    ) : (
+                      <span className="text-sm flex items-center justify-center h-full">{p}</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* Specs & Pricing Details */}
+          {/* Specs Details */}
           <div className="space-y-4">
             <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="accent">Save {listing.savingsPercent}%</Badge>
-              <Badge variant="success">{listing.condition} Condition</Badge>
-              <span className="text-xs text-[#A1A1AA]">• {listing.distanceKm} km away</span>
+              {listing.savingsPercent > 0 && <Badge variant="accent">Save {listing.savingsPercent}%</Badge>}
+              <Badge variant={conditionVariant}>{listing.condition} Condition</Badge>
+              <span className="text-xs text-[#A1A1AA]">• 📍 {listing.areaText}</span>
             </div>
 
             <h1 className="text-2xl sm:text-3xl font-extrabold text-[#FAFAFA] leading-tight">
               {listing.title}
             </h1>
 
-            {/* Pricing Row */}
             <div className="flex items-baseline gap-3">
               <span className="text-3xl font-extrabold text-[#F59E0B] tabular-nums">
                 ₹{listing.askPrice}
               </span>
-              <span className="text-base text-[#A1A1AA] line-through tabular-nums">
-                ₹{listing.originalPrice}
-              </span>
+              {listing.originalPrice > listing.askPrice && (
+                <span className="text-base text-[#A1A1AA] line-through tabular-nums">
+                  ₹{listing.originalPrice}
+                </span>
+              )}
               <span className="text-xs text-[#A1A1AA]">per {listing.unit}</span>
             </div>
 
-            {/* Meta Attributes Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2">
-              <div className="p-3 rounded-xl bg-[#141417] border border-[#27272A]">
-                <span className="text-[10px] text-[#A1A1AA] uppercase font-semibold">Available</span>
-                <p className="text-sm font-bold text-[#FAFAFA] tabular-nums">
+              <div className="p-3 rounded-lg bg-[#141417] border border-[#27272A]">
+                <span className="text-[10px] uppercase font-bold text-[#A1A1AA]">Available</span>
+                <p className="text-sm font-bold text-[#FAFAFA] tabular-nums mt-0.5">
                   {listing.qtyAvailable} {listing.unit}
                 </p>
               </div>
-              <div className="p-3 rounded-xl bg-[#141417] border border-[#27272A]">
-                <span className="text-[10px] text-[#A1A1AA] uppercase font-semibold">Pickup Mode</span>
-                <p className="text-sm font-bold text-[#FAFAFA]">{listing.pickupType}</p>
+              <div className="p-3 rounded-lg bg-[#141417] border border-[#27272A]">
+                <span className="text-[10px] uppercase font-bold text-[#A1A1AA]">Fulfillment</span>
+                <p className="text-sm font-bold text-[#FAFAFA] capitalize mt-0.5">
+                  {listing.pickupType === "self" ? "Self Pickup" : "Delivered"}
+                </p>
               </div>
-              <div className="p-3 rounded-xl bg-[#141417] border border-[#27272A] col-span-2 sm:col-span-1">
-                <span className="text-[10px] text-[#A1A1AA] uppercase font-semibold">Location Area</span>
-                <p className="text-sm font-bold text-[#FAFAFA] truncate">{listing.areaText}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Seller Card (Public Profile - no phone exposed) */}
-          <Card className="flex items-center justify-between p-4 bg-[#141417]">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-[#F59E0B]/20 text-[#F59E0B] flex items-center justify-center font-bold text-lg">
-                M
-              </div>
-              <div>
-                <h4 className="text-sm font-bold text-[#FAFAFA]">{listing.sellerName}</h4>
-                <p className="text-xs text-[#A1A1AA]">
-                  {listing.sellerRole} • {listing.sellerArea}
+              <div className="p-3 rounded-lg bg-[#141417] border border-[#27272A]">
+                <span className="text-[10px] uppercase font-bold text-[#A1A1AA]">Price Terms</span>
+                <p className="text-sm font-bold text-[#FAFAFA] mt-0.5">
+                  {listing.negotiable ? "Negotiable" : "Fixed Price"}
                 </p>
               </div>
             </div>
-            <Badge variant="outline">Verified Seller</Badge>
-          </Card>
+          </div>
 
           {/* Safety Notice Box */}
-          <div className="p-4 rounded-xl bg-[#141417] border border-[#27272A] flex items-start gap-3">
-            <span className="text-xl">🛡️</span>
-            <div className="space-y-0.5">
-              <h5 className="text-xs font-bold text-[#FAFAFA]">Safe Inspection Guarantee</h5>
-              <p className="text-xs text-[#A1A1AA] leading-relaxed">
-                Inspect materials on site before paying. Seller contact phone and WhatsApp reveal immediately after the seller accepts your reservation hold.
-              </p>
+          <div className="p-4 rounded-xl bg-[#09090B] border border-[#27272A] space-y-1.5">
+            <div className="flex items-center gap-2 text-xs font-bold text-[#FAFAFA]">
+              <span className="text-[#F59E0B]">🛡️</span>
+              <span>SiteSwap Surplus Protection</span>
             </div>
+            <p className="text-xs text-[#A1A1AA] leading-relaxed">
+              Inspect materials on site before paying. Direct seller phone contact reveals automatically
+              after the seller accepts your reservation.
+            </p>
           </div>
         </div>
 
-        {/* Right Column: Sticky Reservation Action Card (5 cols) */}
-        <div className="lg:col-span-5 lg:sticky lg:top-24">
-          <Card className="p-6 bg-[#141417] border-[#27272A] space-y-5 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-[#27272A]">
-              <span className="text-sm font-bold text-[#FAFAFA]">Reserve Quantity</span>
-              <span className="text-xs text-[#10B981] font-semibold">24-Hour Hold</span>
-            </div>
+        {/* Right Column (5 cols): Sticky Reservation Card & Seller */}
+        <div className="lg:col-span-5 space-y-5 lg:sticky lg:top-20">
+          <Card className="p-6 bg-[#141417] border-[#27272A] space-y-5 shadow-xl">
+            <h3 className="text-base font-bold text-[#FAFAFA]">Reserve Materials</h3>
 
-            {/* Stepper Control */}
+            {reservedNotice && (
+              <div className="p-3 rounded-lg bg-[#10B981]/15 border border-[#10B981]/30 text-xs text-[#10B981]">
+                ✓ Reservation flow initialized. S12 reserve RPC will finalize and notify the seller.
+              </div>
+            )}
+
             <div className="space-y-2">
-              <label className="block text-xs font-semibold text-[#A1A1AA]">
-                How many {listing.unit} do you need?
+              <label className="text-xs font-semibold text-[#A1A1AA] flex justify-between">
+                <span>Select Quantity ({listing.unit})</span>
+                <span className="text-[#F59E0B]">Max: {listing.qtyAvailable}</span>
               </label>
-              <div className="flex items-center justify-between p-2 rounded-xl bg-[#09090B] border border-[#27272A]">
+              <div className="flex items-center border border-[#27272A] rounded-lg bg-[#09090B] p-1">
                 <button
                   type="button"
-                  onClick={() => setReserveQty(Math.max(1, reserveQty - 1))}
-                  className="w-10 h-10 rounded-lg bg-[#141417] hover:bg-[#1C1C21] text-[#FAFAFA] font-bold text-lg flex items-center justify-center transition-colors cursor-pointer"
+                  onClick={() => handleStep(-1)}
+                  disabled={reserveQty <= 1}
+                  className="w-10 h-10 rounded-md bg-[#141417] text-[#FAFAFA] text-lg font-bold hover:bg-[#27272A] transition-colors disabled:opacity-30"
                 >
                   -
                 </button>
-                <div className="text-center">
-                  <span className="text-xl font-extrabold text-[#FAFAFA] tabular-nums">
-                    {reserveQty}
-                  </span>
-                  <span className="text-xs text-[#A1A1AA] ml-1">{listing.unit}</span>
+                <div className="flex-1 text-center font-extrabold text-[#FAFAFA] tabular-nums text-base">
+                  {reserveQty} <span className="text-xs font-normal text-[#A1A1AA]">{listing.unit}</span>
                 </div>
                 <button
                   type="button"
-                  onClick={() => setReserveQty(Math.min(listing.qtyAvailable, reserveQty + 1))}
-                  className="w-10 h-10 rounded-lg bg-[#141417] hover:bg-[#1C1C21] text-[#FAFAFA] font-bold text-lg flex items-center justify-center transition-colors cursor-pointer"
+                  onClick={() => handleStep(1)}
+                  disabled={reserveQty >= listing.qtyAvailable}
+                  className="w-10 h-10 rounded-md bg-[#141417] text-[#FAFAFA] text-lg font-bold hover:bg-[#27272A] transition-colors disabled:opacity-30"
                 >
                   +
                 </button>
               </div>
-              <p className="text-[11px] text-[#A1A1AA] text-right">
-                Max available: {listing.qtyAvailable} {listing.unit}
-              </p>
             </div>
 
-            {/* Cost Breakdown */}
-            <div className="p-3.5 rounded-xl bg-[#09090B] border border-[#27272A] space-y-2 text-xs">
-              <div className="flex justify-between text-[#A1A1AA]">
+            <div className="p-3.5 rounded-lg bg-[#09090B] border border-[#27272A] space-y-2">
+              <div className="flex justify-between text-xs text-[#A1A1AA]">
                 <span>Rate per {listing.unit}</span>
-                <span className="text-[#FAFAFA] tabular-nums">₹{listing.askPrice}</span>
+                <span className="tabular-nums text-[#FAFAFA]">₹{listing.askPrice}</span>
               </div>
-              <div className="flex justify-between text-[#A1A1AA]">
+              <div className="flex justify-between text-xs text-[#A1A1AA]">
                 <span>Quantity</span>
-                <span className="text-[#FAFAFA] tabular-nums">{reserveQty} {listing.unit}</span>
+                <span className="tabular-nums text-[#FAFAFA]">{reserveQty} {listing.unit}</span>
               </div>
-              <div className="flex justify-between pt-2 border-t border-[#27272A] text-sm font-bold text-[#FAFAFA]">
-                <span>Total Value</span>
-                <span className="text-[#F59E0B] text-base tabular-nums">
+              <div className="pt-2 border-t border-[#27272A] flex justify-between items-baseline">
+                <span className="text-sm font-bold text-[#FAFAFA]">Total Pay on Pickup</span>
+                <span className="text-xl font-extrabold text-[#F59E0B] tabular-nums">
                   ₹{totalCost.toLocaleString("en-IN")}
                 </span>
               </div>
             </div>
 
-            {/* Reservation Button or Success State */}
-            {reservedSuccess ? (
-              <div className="p-4 rounded-xl bg-[#10B981]/15 border border-[#10B981]/30 text-center space-y-2">
-                <span className="text-sm font-bold text-[#10B981]">🎉 Reservation Requested!</span>
-                <p className="text-xs text-[#A1A1AA]">
-                  The seller has been alerted. Check your{" "}
-                  <Link href="/my/reservations" className="text-[#F59E0B] underline font-semibold">
-                    Reservations Inbox
-                  </Link>.
+            <Button
+              size="lg"
+              className="w-full text-sm font-bold"
+              disabled={listing.qtyAvailable <= 0}
+              onClick={() => setReservedNotice(true)}
+            >
+              {listing.qtyAvailable > 0
+                ? `Reserve ${reserveQty} ${listing.unit} • ₹${totalCost.toLocaleString("en-IN")}`
+                : "Sold Out"}
+            </Button>
+          </Card>
+
+          {/* Seller Profile Card (Phone NEVER exposed here) */}
+          <Card className="p-4 bg-[#141417] border-[#27272A] flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-[#F59E0B] text-[#09090B] font-extrabold text-sm flex items-center justify-center shrink-0">
+                {listing.seller.name.slice(0, 1).toUpperCase()}
+              </div>
+              <div>
+                <h4 className="text-xs sm:text-sm font-bold text-[#FAFAFA]">{listing.seller.name}</h4>
+                <p className="text-[11px] text-[#A1A1AA]">
+                  {listing.seller.role} • 📍 {listing.seller.areaText}
                 </p>
               </div>
-            ) : (
-              <Button
-                size="lg"
-                className="w-full text-base py-3.5"
-                onClick={() => setReservedSuccess(true)}
-              >
-                Reserve {reserveQty} Bags • ₹{totalCost.toLocaleString("en-IN")}
-              </Button>
-            )}
-
-            <p className="text-[11px] text-[#A1A1AA] text-center leading-relaxed">
-              No immediate online payment required. Pay upon physical inspection and collection.
-            </p>
+            </div>
+            <span className="text-[10px] px-2 py-0.5 rounded bg-[#27272A] text-[#10B981] font-medium shrink-0">
+              Verified
+            </span>
           </Card>
         </div>
       </div>

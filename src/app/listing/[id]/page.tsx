@@ -1,4 +1,7 @@
 import React from "react";
+import Link from "next/link";
+import { Button } from "@/components/ui/Button";
+import { getListingById } from "@/features/listings/queries";
 import { ListingDetailView } from "@/features/listings/components/ListingDetailView";
 
 export function generateStaticParams() {
@@ -10,27 +13,25 @@ export default async function ListingDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const resolvedParams = await params;
-  const listingId = resolvedParams.id;
+  const { id } = await params;
+  const result = await getListingById(id);
 
-  // Mock server listing data (will connect to DB query in S11)
-  const listing = {
-    id: listingId,
-    title: "UltraTech Cement Bags (Surplus Lot)",
-    unit: "bags",
-    qtyAvailable: 18,
-    askPrice: 290,
-    originalPrice: 390,
-    savingsPercent: 25,
-    condition: "Good",
-    pickupType: "Self Pickup",
-    distanceKm: 1.8,
-    areaText: "Fairlands, Salem",
-    sellerName: "Murugan Builders",
-    sellerRole: "Contractor",
-    sellerArea: "Salem North",
-    photosCount: 3,
-  };
+  if (!result.ok) {
+    return (
+      <div className="max-w-md mx-auto py-20 text-center space-y-4">
+        <span className="text-5xl">📦</span>
+        <h1 className="text-xl font-bold text-[#FAFAFA]">Listing Not Found</h1>
+        <p className="text-xs text-[#A1A1AA]">
+          This surplus material lot has either been fully claimed, removed by the seller, or the link is invalid.
+        </p>
+        <div className="pt-2">
+          <Link href="/browse">
+            <Button size="sm">Browse Other Surplus</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
-  return <ListingDetailView listing={listing} />;
+  return <ListingDetailView listing={result.data} />;
 }
