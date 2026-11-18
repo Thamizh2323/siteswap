@@ -16,7 +16,7 @@ Tags: **[C]** use Claude, **[N]** NIM/Gemini fine, **[YOU]** manual step
 
 ## Phase B: Core Product (Must)
 - [x] S6 [N] Client-side image compress + upload to Storage
-- [ ] S7 [C] Gemini analyze route (zod, rate limit, fallback)
+- [x] S7 [C] Gemini analyze route (zod, rate limit, fallback)
 - [ ] S8 [N] Post Surplus page (form, price suggestion, location pin)
 - [ ] S9 [N] Browse list + filters + pagination
 - [ ] S10 [N] Map view + radius search (nearby_listings RPC)
