@@ -15,7 +15,7 @@ Tags: **[C]** use Claude, **[N]** NIM/Gemini fine, **[YOU]** manual step
 - [x] S5 [C] Auth (email+password, Google optional) + profile page + protected routes
 
 ## Phase B: Core Product (Must)
-- [ ] S6 [N] Client-side image compress + upload to Storage
+- [x] S6 [N] Client-side image compress + upload to Storage
 - [ ] S7 [C] Gemini analyze route (zod, rate limit, fallback)
 - [ ] S8 [N] Post Surplus page (form, price suggestion, location pin)
 - [ ] S9 [N] Browse list + filters + pagination
