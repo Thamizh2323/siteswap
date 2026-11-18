@@ -1,39 +1,107 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { calculateSuggestedPrice, calculateSavingsPercent, MaterialCondition } from "@/lib/price";
+import { calculateSuggestedPrice, calculateSavingsPercent } from "@/lib/price";
 import { MATERIALS_CATALOG } from "@/features/listings/constants";
+import { PhotoPicker, type PhotoItem } from "@/features/listings/components/PhotoPicker";
+import { LocationPicker } from "@/features/listings/components/LocationPicker";
+import { createListingAction } from "@/features/listings/actions";
+import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
+import type { AnalyzeEstimateSuccess } from "@/lib/ai-schemas";
+import type { ListingCondition } from "@/features/listings/schemas";
+
+const DEFAULT_MAT = { key: "red_clay_brick", name: "Red Clay Brick", unit: "nos", refPrice: 7.0 };
+const CONDITIONS: { key: ListingCondition; factor: string }[] = [
+  { key: "good", factor: "0.75x" },
+  { key: "fair", factor: "0.65x" },
+  { key: "damaged", factor: "0.45x" },
+];
 
 export default function PostSurplusPage() {
-  const [photos, setPhotos] = useState<string[]>(["photo-1"]);
-  const [selectedMaterial, setSelectedMaterial] = useState("red_clay_brick");
-  const [condition, setCondition] = useState<MaterialCondition>("good");
-  const [qty, setQty] = useState<number>(350);
-  const [originalPrice, setOriginalPrice] = useState<number>(7.0);
-  const [askPrice, setAskPrice] = useState<number>(5.25);
-  const [negotiable, setNegotiable] = useState<boolean>(true);
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const router = useRouter();
+  const [userId, setUserId] = useState("");
+  const [photos, setPhotos] = useState<PhotoItem[]>([]);
+  const [materialKey, setMaterialKey] = useState("red_clay_brick");
+  const [condition, setCondition] = useState<ListingCondition>("good");
+  const [qty, setQty] = useState(350);
+  const [originalPrice, setOriginalPrice] = useState(7.0);
+  const [askPrice, setAskPrice] = useState(5.25);
+  const [negotiable, setNegotiable] = useState(true);
+  const [loc, setLoc] = useState({ lat: 11.6643, lng: 78.146, areaText: "Fairlands, Salem" });
+  const [aiEstimate, setAiEstimate] = useState<AnalyzeEstimateSuccess | null>(null);
+  const [aiFallback, setAiFallback] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const activeMaterialObj = MATERIALS_CATALOG.find((m) => m.key === selectedMaterial) || MATERIALS_CATALOG[0];
+  useEffect(() => {
+    createBrowserSupabaseClient().auth.getUser().then(({ data: { user } }) => {
+      if (!user) router.push("/login?next=/sell/new");
+      else setUserId(user.id);
+    });
+  }, [router]);
 
-  const handleConditionChange = (newCondition: MaterialCondition) => {
-    setCondition(newCondition);
-    setAskPrice(calculateSuggestedPrice(originalPrice, newCondition));
+  const activeMat = MATERIALS_CATALOG.find((m) => m.key === materialKey) ?? DEFAULT_MAT;
+
+  const handleCondition = (c: ListingCondition) => {
+    setCondition(c);
+    setAskPrice(calculateSuggestedPrice(originalPrice, c));
   };
 
-  const handleOriginalPriceChange = (val: number) => {
+  const handleOriginalPrice = (val: number) => {
     setOriginalPrice(val);
     setAskPrice(calculateSuggestedPrice(val, condition));
   };
 
-  const savingsPercent = calculateSavingsPercent(originalPrice, askPrice);
+  const handleAiEstimate = (est: AnalyzeEstimateSuccess) => {
+    setAiEstimate(est);
+    setAiFallback(false);
+    setMaterialKey(est.materialKey);
+    setQty(est.estimatedQty);
+    setCondition(est.condition);
+    const refPrice = MATERIALS_CATALOG.find((m) => m.key === est.materialKey)?.refPrice ?? originalPrice;
+    setOriginalPrice(refPrice);
+    setAskPrice(calculateSuggestedPrice(refPrice, est.condition));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitError(null);
+    setIsSubmitting(true);
+
+    const res = await createListingAction({
+      materialKey,
+      qty,
+      unit: activeMat.unit,
+      condition,
+      originalPrice,
+      askPrice,
+      negotiable,
+      photos: photos.map((p) => p.publicUrl),
+      lat: loc.lat,
+      lng: loc.lng,
+      areaText: loc.areaText,
+      pickupType: "self",
+      qtyAiEstimate: aiEstimate?.estimatedQty,
+      aiConfidence: aiEstimate?.confidence,
+    });
+
+    setIsSubmitting(false);
+    if (!res.ok) {
+      setSubmitError(res.error.message || "Failed to publish listing.");
+      return;
+    }
+    router.push(`/browse?created=${res.data.id}`);
+  };
+
+  const savings = calculateSavingsPercent(originalPrice, askPrice);
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    <form onSubmit={handleSubmit} className="max-w-5xl mx-auto space-y-6">
       <div>
         <h1 className="text-2xl font-extrabold text-[#FAFAFA]">Post Surplus Material</h1>
         <p className="text-xs sm:text-sm text-[#A1A1AA] mt-1">
@@ -41,77 +109,47 @@ export default function PostSurplusPage() {
         </p>
       </div>
 
+      {submitError && <div className="p-3 rounded-lg bg-red-500/15 border border-red-500/30 text-xs text-red-400">{submitError}</div>}
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left Column: Media & Map (5 cols) */}
         <div className="lg:col-span-5 space-y-5">
-          <Card className="space-y-3 p-4 bg-[#141417]">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-[#FAFAFA] uppercase">Photos ({photos.length}/4)</span>
-              <span className="text-[11px] text-[#A1A1AA]">&lt;300 KB compressed</span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2.5">
-              {photos.map((_, idx) => (
-                <div key={idx} className="relative h-28 rounded-lg bg-[#09090B] border border-[#27272A] flex items-center justify-center text-3xl">
-                  <span>🧱</span>
-                  <button
-                    type="button"
-                    onClick={() => setPhotos(photos.filter((_, i) => i !== idx))}
-                    className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-[#09090B]/80 text-[#FAFAFA] text-xs flex items-center justify-center hover:bg-red-500"
-                  >
-                    ×
-                  </button>
-                  <span className="absolute bottom-1 left-1.5 text-[9px] px-1.5 py-0.5 rounded bg-[#09090B]/80 text-[#A1A1AA]">Slot {idx + 1}</span>
-                </div>
-              ))}
-              {photos.length < 4 && (
-                <button
-                  type="button"
-                  onClick={() => setPhotos([...photos, `photo-${photos.length + 1}`])}
-                  className="h-28 rounded-lg border-2 border-dashed border-[#27272A] hover:border-[#F59E0B]/50 flex flex-col items-center justify-center gap-1 text-xs text-[#A1A1AA] cursor-pointer"
-                >
-                  <span className="text-xl text-[#F59E0B] font-bold">+</span>
-                  <span>Add Photo</span>
-                </button>
-              )}
-            </div>
+          <Card className="p-4 bg-[#141417]">
+            <PhotoPicker userId={userId} photos={photos} onPhotosChange={setPhotos} onAiEstimate={handleAiEstimate} onAiFallback={() => setAiFallback(true)} />
           </Card>
-
-          <Card className="space-y-3 p-4 bg-[#141417]">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-[#FAFAFA] uppercase">Pickup Location</span>
-              <span className="text-[11px] text-[#10B981] font-semibold">Draggable Pin</span>
-            </div>
-            <div className="relative h-36 rounded-lg bg-[#09090B] border border-[#27272A] flex flex-col items-center justify-center">
-              <div className="w-8 h-8 rounded-full bg-[#F59E0B] text-[#09090B] flex items-center justify-center font-bold text-sm shadow-xl animate-bounce">📍</div>
-              <span className="text-[11px] font-bold text-[#FAFAFA] bg-[#141417] px-2 py-0.5 rounded mt-1 border border-[#27272A]">Fairlands, Salem</span>
-            </div>
-            <p className="text-[11px] text-[#A1A1AA]">Saved as <code className="text-[#F59E0B]">SRID=4326;POINT(78.14 11.67)</code></p>
+          <Card className="p-4 bg-[#141417]">
+            <LocationPicker lat={loc.lat} lng={loc.lng} areaText={loc.areaText} onChange={setLoc} />
           </Card>
         </div>
 
-        {/* Right Column: AI Banner + Form (7 cols) */}
         <div className="lg:col-span-7 space-y-5">
-          <div className="p-4 rounded-xl bg-[#F59E0B]/10 border border-[#F59E0B]/30 flex items-start justify-between gap-3">
-            <div className="flex items-start gap-2.5">
-              <span className="text-lg">⚡</span>
-              <div>
-                <h4 className="text-xs sm:text-sm font-bold text-[#F59E0B]">AI estimate, please confirm • 94% confidence</h4>
-                <p className="text-xs text-[#A1A1AA] mt-0.5">Detected: <strong>Red Clay Bricks</strong> (~350 pcs), condition: <strong>Good</strong>.</p>
+          {aiEstimate && !aiFallback && (
+            <div className="p-4 rounded-xl bg-[#F59E0B]/10 border border-[#F59E0B]/30 flex items-start justify-between gap-3">
+              <div className="flex items-start gap-2.5">
+                <span className="text-lg">⚡</span>
+                <div>
+                  <h4 className="text-xs sm:text-sm font-bold text-[#F59E0B]">AI estimate, please confirm • {Math.round(aiEstimate.confidence * 100)}% confidence</h4>
+                  <p className="text-xs text-[#A1A1AA] mt-0.5">Detected: <strong>{activeMat.name}</strong> (~{aiEstimate.estimatedQty} {aiEstimate.unit}), condition: <strong>{aiEstimate.condition}</strong>.</p>
+                </div>
               </div>
+              <Badge variant="accent">Gemini Vision</Badge>
             </div>
-            <Badge variant="accent">Gemini Vision</Badge>
-          </div>
+          )}
+
+          {aiFallback && (
+            <div className="p-3 rounded-xl bg-[#27272A]/50 border border-[#3F3F46] text-xs text-[#A1A1AA]">
+              ℹ️ Manual mode active: Please confirm or adjust your surplus material specs below.
+            </div>
+          )}
 
           <Card className="space-y-4 p-5 sm:p-6 bg-[#141417]">
             <div className="space-y-1.5">
               <label className="block text-xs font-semibold text-[#A1A1AA]">Material Type</label>
               <select
-                value={selectedMaterial}
+                value={materialKey}
                 onChange={(e) => {
-                  setSelectedMaterial(e.target.value);
+                  setMaterialKey(e.target.value);
                   const mat = MATERIALS_CATALOG.find((m) => m.key === e.target.value);
-                  if (mat) handleOriginalPriceChange(mat.refPrice);
+                  if (mat) handleOriginalPrice(mat.refPrice);
                 }}
                 className="w-full bg-[#09090B] border border-[#27272A] rounded-lg px-3.5 py-2.5 text-sm text-[#FAFAFA] focus:outline-none focus:border-[#F59E0B]"
               >
@@ -122,26 +160,26 @@ export default function PostSurplusPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <Input label="Available Quantity" type="number" value={qty} onChange={(e) => setQty(Number(e.target.value))} />
+              <Input label="Available Quantity" type="number" min="1" value={qty} onChange={(e) => setQty(Math.max(1, Number(e.target.value)))} />
               <div className="space-y-1.5">
                 <label className="block text-xs font-semibold text-[#A1A1AA]">Unit</label>
-                <div className="w-full bg-[#09090B] border border-[#27272A] rounded-lg px-3.5 py-2.5 text-sm text-[#A1A1AA]">{activeMaterialObj?.unit || "units"}</div>
+                <div className="w-full bg-[#09090B] border border-[#27272A] rounded-lg px-3.5 py-2.5 text-sm text-[#A1A1AA]">{activeMat.unit}</div>
               </div>
             </div>
 
             <div className="space-y-1.5">
               <label className="block text-xs font-semibold text-[#A1A1AA]">Condition Factor</label>
               <div className="grid grid-cols-3 gap-2">
-                {(["good", "fair", "damaged"] as MaterialCondition[]).map((c) => (
+                {CONDITIONS.map((c) => (
                   <button
-                    key={c}
+                    key={c.key}
                     type="button"
-                    onClick={() => handleConditionChange(c)}
+                    onClick={() => handleCondition(c.key)}
                     className={`py-2 px-3 rounded-lg text-xs font-bold capitalize transition-all border ${
-                      condition === c ? "bg-[#F59E0B] text-[#09090B] border-[#F59E0B]" : "bg-[#09090B] text-[#A1A1AA] border-[#27272A]"
+                      condition === c.key ? "bg-[#F59E0B] text-[#09090B] border-[#F59E0B]" : "bg-[#09090B] text-[#A1A1AA] border-[#27272A]"
                     }`}
                   >
-                    {c} ({c === "good" ? "0.75x" : c === "fair" ? "0.65x" : "0.45x"})
+                    {c.key} ({c.factor})
                   </button>
                 ))}
               </div>
@@ -150,11 +188,10 @@ export default function PostSurplusPage() {
             <div className="pt-2 border-t border-[#27272A] space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-[#FAFAFA] uppercase">Pricing & Value</span>
-                {savingsPercent > 0 && <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#10B981]/15 text-[#10B981]">{savingsPercent}% below retail</span>}
+                {savings > 0 && <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#10B981]/15 text-[#10B981]">{savings}% below retail</span>}
               </div>
-
               <div className="grid grid-cols-2 gap-3">
-                <Input label="Original Retail (₹)" type="number" step="0.5" value={originalPrice} onChange={(e) => handleOriginalPriceChange(Number(e.target.value))} />
+                <Input label="Original Retail (₹)" type="number" step="0.5" value={originalPrice} onChange={(e) => handleOriginalPrice(Number(e.target.value))} />
                 <Input label="Suggested Ask Price (₹)" type="number" step="0.1" value={askPrice} onChange={(e) => setAskPrice(Number(e.target.value))} />
               </div>
 
@@ -173,20 +210,10 @@ export default function PostSurplusPage() {
               </div>
             </div>
 
-            <Button
-              size="lg"
-              className="w-full mt-4"
-              isLoading={isSubmitting}
-              onClick={() => {
-                setIsSubmitting(true);
-                setTimeout(() => setIsSubmitting(false), 1000);
-              }}
-            >
-              Publish Listing
-            </Button>
+            <Button size="lg" type="submit" className="w-full mt-4" isLoading={isSubmitting}>Publish Listing</Button>
           </Card>
         </div>
       </div>
-    </div>
+    </form>
   );
 }
