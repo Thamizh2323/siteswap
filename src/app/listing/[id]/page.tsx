@@ -2,6 +2,7 @@ import React from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { getListingById } from "@/features/listings/queries";
+import { reserveListingAction } from "@/features/reservations/actions";
 import { ListingDetailView } from "@/features/listings/components/ListingDetailView";
 
 export function generateStaticParams() {
@@ -33,5 +34,10 @@ export default async function ListingDetailPage({
     );
   }
 
-  return <ListingDetailView listing={result.data} />;
+  async function handleReserve(qty: number) {
+    "use server";
+    return reserveListingAction({ listingId: id, qty });
+  }
+
+  return <ListingDetailView listing={result.data} onReserve={handleReserve} />;
 }

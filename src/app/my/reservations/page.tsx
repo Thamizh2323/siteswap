@@ -1,191 +1,40 @@
-"use client";
+import React, { Suspense } from "react";
+import { requireUser } from "@/server/auth";
+import { getMyReservations } from "@/features/reservations/queries";
+import { ReservationsInboxView } from "@/features/reservations/components/ReservationsInboxView";
 
-import React, { useState } from "react";
-import { Card } from "@/components/ui/Card";
-import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
-import { DEMO_PURCHASES, DEMO_REQUESTS } from "@/features/reservations/constants";
+export const metadata = {
+  title: "Reservations Inbox | SiteSwap",
+  description: "Manage material holds, contact counterparty contractors, and confirm handovers.",
+};
 
-export default function ReservationsInboxPage() {
-  const [activeTab, setActiveTab] = useState<"purchases" | "requests">("purchases");
-  const [completedIds, setCompletedIds] = useState<string[]>([]);
-  const [acceptedIds, setAcceptedIds] = useState<string[]>([]);
-
-  const handleConfirmReceived = (id: string) => {
-    setCompletedIds([...completedIds, id]);
-  };
-
-  const handleSellerResponse = (id: string, accept: boolean) => {
-    if (accept) {
-      setAcceptedIds([...acceptedIds, id]);
-    }
-  };
-
-  const listItems = activeTab === "purchases" ? DEMO_PURCHASES : DEMO_REQUESTS;
+async function ReservationsContent() {
+  await requireUser();
+  const { purchases, requests } = await getMyReservations();
 
   return (
-    <div className="space-y-6">
-      {/* Title */}
-      <div>
-        <h1 className="text-2xl font-extrabold text-[#FAFAFA]">Reservations Inbox</h1>
-        <p className="text-xs sm:text-sm text-[#A1A1AA] mt-1">
-          Manage your materials holds, buyer inquiries, and handover completions.
-        </p>
-      </div>
+    <ReservationsInboxView
+      initialPurchases={purchases}
+      initialRequests={requests}
+    />
+  );
+}
 
-      {/* Segmented Tab Bar: My Purchases vs Incoming Requests */}
-      <div className="flex border-b border-[#27272A] gap-4">
-        <button
-          onClick={() => setActiveTab("purchases")}
-          className={`pb-3 px-2 text-sm font-bold border-b-2 transition-all flex items-center gap-2 ${
-            activeTab === "purchases"
-              ? "border-[#F59E0B] text-[#F59E0B]"
-              : "border-transparent text-[#A1A1AA] hover:text-[#FAFAFA]"
-          }`}
-        >
-          <span>My Purchases</span>
-          <span className="px-2 py-0.5 rounded-full text-xs bg-[#141417] text-[#FAFAFA] border border-[#27272A]">
-            {DEMO_PURCHASES.length}
-          </span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab("requests")}
-          className={`pb-3 px-2 text-sm font-bold border-b-2 transition-all flex items-center gap-2 ${
-            activeTab === "requests"
-              ? "border-[#F59E0B] text-[#F59E0B]"
-              : "border-transparent text-[#A1A1AA] hover:text-[#FAFAFA]"
-          }`}
-        >
-          <span>Incoming Requests</span>
-          <span className="px-2 py-0.5 rounded-full text-xs bg-[#141417] text-[#FAFAFA] border border-[#27272A]">
-            {DEMO_REQUESTS.length}
-          </span>
-        </button>
-      </div>
-
-      {/* Card Grid (Responsive: grid-cols-1 md:grid-cols-2 gap-4) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {listItems.map((item) => {
-          const isCompleted = completedIds.includes(item.id);
-          const isAccepted = item.status === "accepted" || acceptedIds.includes(item.id);
-
-          return (
-            <Card
-              key={item.id}
-              className="p-5 bg-[#141417] border-[#27272A] flex flex-col justify-between space-y-4"
-            >
-              {/* Card Header & Status */}
-              <div className="space-y-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <h3 className="text-base font-bold text-[#FAFAFA] line-clamp-1">
-                      {item.listingTitle}
-                    </h3>
-                    <p className="text-xs text-[#A1A1AA] mt-0.5">{item.counterpartyName}</p>
-                  </div>
-
-                  {isCompleted ? (
-                    <Badge variant="success">Completed</Badge>
-                  ) : isAccepted ? (
-                    <Badge variant="success">Accepted</Badge>
-                  ) : (
-                    <Badge variant="warning">Pending</Badge>
-                  )}
-                </div>
-
-                {/* Reservation Metric Row */}
-                <div className="p-3 rounded-lg bg-[#09090B] border border-[#27272A] flex items-center justify-between text-xs">
-                  <div>
-                    <span className="text-[#A1A1AA]">Quantity Held: </span>
-                    <strong className="text-[#FAFAFA] tabular-nums">
-                      {item.qty} {item.unit}
-                    </strong>
-                  </div>
-                  <div>
-                    <span className="text-[#A1A1AA]">Total: </span>
-                    <strong className="text-[#F59E0B] text-sm tabular-nums">
-                      ₹{item.totalPrice.toLocaleString("en-IN")}
-                    </strong>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Buttons based on status and tab */}
-              <div className="pt-2 border-t border-[#27272A] space-y-3">
-                {/* When ACCEPTED: reveal Call & WhatsApp via get_contact RPC */}
-                {isAccepted && !isCompleted && (
-                  <div className="space-y-2.5">
-                    <div className="grid grid-cols-2 gap-2">
-                      <a
-                        href={`tel:${item.counterpartyPhone || "+919876543210"}`}
-                        className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-lg bg-[#1C1C21] hover:bg-[#27272A] text-xs font-bold text-[#FAFAFA] border border-[#27272A] transition-colors"
-                      >
-                        <span>📞</span> Call
-                      </a>
-                      <a
-                        href={`https://wa.me/${(item.counterpartyPhone || "+919876543210").replace(/[^0-9]/g, "")}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-lg bg-[#10B981] hover:bg-[#059669] text-xs font-bold text-white transition-colors"
-                      >
-                        <span>💬</span> WhatsApp
-                      </a>
-                    </div>
-
-                    {activeTab === "purchases" && (
-                      <Button
-                        size="md"
-                        className="w-full text-xs font-bold"
-                        onClick={() => handleConfirmReceived(item.id)}
-                      >
-                        Confirm Received (Log Impact)
-                      </Button>
-                    )}
-                  </div>
-                )}
-
-                {/* When PENDING on Purchases: countdown notice */}
-                {!isAccepted && activeTab === "purchases" && (
-                  <div className="p-3 rounded-lg bg-[#09090B] border border-[#27272A] text-center text-xs text-[#A1A1AA]">
-                    <span className="text-[#F59E0B] font-semibold">{item.expiresInText}</span> • Phone reveals on seller accept
-                  </div>
-                )}
-
-                {/* When PENDING on Incoming Requests: Accept / Decline buttons */}
-                {!isAccepted && activeTab === "requests" && (
-                  <div className="space-y-2">
-                    <p className="text-[11px] text-[#A1A1AA] text-center">{item.expiresInText}</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        onClick={() => handleSellerResponse(item.id, true)}
-                      >
-                        Accept Hold
-                      </Button>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => handleSellerResponse(item.id, false)}
-                      >
-                        Decline
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                {/* When COMPLETED */}
-                {isCompleted && (
-                  <div className="p-3 rounded-lg bg-[#10B981]/10 text-center text-xs font-bold text-[#10B981]">
-                    ✅ Handover Confirmed & Tonnes Diverted Logged
-                  </div>
-                )}
-              </div>
-            </Card>
-          );
-        })}
-      </div>
-    </div>
+export default function ReservationsInboxPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="space-y-6 animate-pulse">
+          <div className="h-8 w-48 bg-[#141417] rounded-lg border border-[#27272A]" />
+          <div className="h-10 w-64 bg-[#141417] rounded-lg border border-[#27272A]" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="h-44 bg-[#141417] rounded-xl border border-[#27272A]" />
+            <div className="h-44 bg-[#141417] rounded-xl border border-[#27272A]" />
+          </div>
+        </div>
+      }
+    >
+      <ReservationsContent />
+    </Suspense>
   );
 }
